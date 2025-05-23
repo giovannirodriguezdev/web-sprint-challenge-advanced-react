@@ -81,10 +81,14 @@ export default function AppFunctional(props) {
     const direction = evt.target.id;
     const { newIndex, blockedMessage } = getNextIndex(direction);
 
+    if (message) {
+      setMessage('');
+    }
+
     if (newIndex !== index) {
       setIndex(newIndex);
       setSteps(prevSteps => prevSteps + 1);
-      setMessage('');
+      // setMessage('');
     } else {
       setMessage(blockedMessage);
     }
@@ -99,7 +103,10 @@ export default function AppFunctional(props) {
   async function onSubmit(evt) {
     // Use a POST request to send a payload to the server.
     evt.preventDefault();
+    console.log('---onSubmit triggered---');
+    console.log('1. Message BEFORE clearing:', message);
     setMessage('');
+    console.log('2. Message AFTER clearing (sync):', '');
 
     const { x, y } = getXY();
     const payload = {
@@ -108,18 +115,29 @@ export default function AppFunctional(props) {
       steps,
       email,
     };
+    console.log('3. Submitting payload:', payload);
 
     try {
       const response = await axios.post('http://localhost:9000/api/result', payload);
+      console.log('4. Axios POST success. Response data:', response.data);
       setMessage(response.data.message);
+      console.log('5. Message AFTER success setting (async):', response.data.message);
       setEmail(initialEmail);
     } catch (error) {
+      console.log('4. Axios POST failed. Error object:', error);
       if (error.response) {
+        console.log('5a. Error response data:', error.response.data);
+        console.log('5b. Error message from response:', error.response.data.message);
         setMessage(error.response.data.message);
+        console.log('6. Message AFTER error setting (async):', error.response.data.message);
       } else {
+        console.log('5a. Network error or unknown issue.');
         setMessage('Network error or unexpected issue.');
+        console.log('6. Message AFTER network error setting (async): Network error or unexpected issue.');
       }
+      setEmail(initialEmail);
     }
+    console.log('7. Email AFTER submission (sync):', initialEmail);
   }
 
   return (
@@ -131,14 +149,14 @@ export default function AppFunctional(props) {
       <div id="grid">
         {
           [0, 1, 2, 3, 4, 5, 6, 7, 8].map(idx => (
-            <div key={idx} className={`square${idx === 4 ? ' active' : ''}`}>
+            <div key={idx} className={`square${idx === index ? ' active' : ''}`}>
               {idx === index ? 'B' : null}
             </div>
           ))
         }
       </div>
       <div className="info">
-        <h3 id="message">{message}</h3>
+        <h3 id="message" data-testid='message'>{message}</h3>
       </div>
       <div id="keypad">
         <button id="left" onClick={move}>LEFT</button>
